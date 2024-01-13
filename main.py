@@ -5,16 +5,33 @@ import pybullet_envs
 import numpy as np
 from sac_torch import Agent
 from torch.utils.tensorboard import SummaryWriter
+import robosuite as suite
+from robosuite_environment import RoboSuiteWrapper
 
 
 if __name__ == '__main__':
 
-    env = gym.make('InvertedPendulumBulletEnv-v0')
+    env_name = "Lift"
+
+    env = suite.make(
+        env_name,  # Environment
+        robots=["Panda"],  # Use two Panda robots
+        controller_configs=suite.load_controller_config(default_controller="JOINT_VELOCITY"),  # Controller
+        # controller_configs=suite.load_controller_config(default_controller="OSC_POSE"),
+        has_renderer=False,  # Enable rendering
+        use_camera_obs=False,
+        # render_camera="sideview",           # Camera view
+        # has_offscreen_renderer=True,        # No offscreen rendering
+        reward_shaping=True,
+        control_freq=20,  # Control frequency
+    )
+    env = RoboSuiteWrapper(env)
+
+    # agent = Agent(input_dims=env.observation_space.shape, env=env, n_actions=env.action_space.shape[0])
+    agent = Agent(input_dims=env.input_dims, env=env, n_actions=env.action_dim)
     writer = SummaryWriter('logs')
-    agent = Agent(input_dims=env.observation_space.shape, env=env, n_actions=env.action_space.shape[0])
     n_games = 250
-    filename = 'inverted_pendulum.png'
-    best_score = env.reward_range[0]
+    best_score = 0
     score_history = []
     load_checkpoint = False
     episode_identifier = 0
