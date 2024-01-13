@@ -7,6 +7,7 @@ from sac_torch import Agent
 from utils import plot_learning_curve
 
 if __name__ == '__main__':
+
     env = gym.make('InvertedPendulumBulletEnv-v0')
     agent = Agent(input_dims=env.observation_space.shape, env=env, n_actions=env.action_space.shape[0])
     n_games = 250
@@ -14,7 +15,7 @@ if __name__ == '__main__':
     figure_file = 'plots/' + filename
     best_score = env.reward_range[0]
     score_history = []
-    load_checkpoint = True
+    load_checkpoint = False
 
     if load_checkpoint:
         agent.load_models()
