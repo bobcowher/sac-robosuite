@@ -1,6 +1,7 @@
 gym==0.23.0
 pybullet
 matplotlib
+tensorboard
 --extra-index-url https://download.pytorch.org/whl/cu118
 torch
 torchvision
