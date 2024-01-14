@@ -20,11 +20,11 @@ class Agent():
 
         self.actor = ActorNetwork(alpha, input_dims, n_actions=n_actions,
                                   name = 'actor', max_action=env.action_space.high)
-        self.critic_1 = CriticNetwork(beta, input_dims, n_actions=n_actions, name='critic_1')
-        self.critic_2 = CriticNetwork(beta, input_dims, n_actions, name='critic_2')
-        self.value = ValueNetwork(beta, input_dims, name='value')
+        self.critic_1 = CriticNetwork(beta, input_dims, n_actions=n_actions, name='critic_1', fc1_dims=layer1_size, fc2_dims=layer2_size)
+        self.critic_2 = CriticNetwork(beta, input_dims, n_actions=n_actions, name='critic_2', fc1_dims=layer1_size, fc2_dims=layer2_size)
+        self.value = ValueNetwork(beta, input_dims, name='value', fc1_dims=layer1_size, fc2_dims=layer2_size)
 
-        self.target_value = ValueNetwork(beta, input_dims, name='target_value')
+        self.target_value = ValueNetwork(beta, input_dims, name='target_value', fc1_dims=layer1_size, fc2_dims=layer2_size)
         self.scale = reward_scale
         self.update_network_parameters(tau=1)
 

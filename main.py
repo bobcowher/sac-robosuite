@@ -6,7 +6,8 @@ import numpy as np
 from sac_torch import Agent
 from torch.utils.tensorboard import SummaryWriter
 import robosuite as suite
-from robosuite_environment import RoboSuiteWrapper
+# from robosuite_environment import RoboSuiteWrapper
+from robosuite.wrappers import GymWrapper
 
 
 if __name__ == '__main__':
@@ -20,21 +21,22 @@ if __name__ == '__main__':
         # controller_configs=suite.load_controller_config(default_controller="OSC_POSE"),
         has_renderer=False,  # Enable rendering
         use_camera_obs=False,
+        horizon=200,
         # render_camera="sideview",           # Camera view
         # has_offscreen_renderer=True,        # No offscreen rendering
         reward_shaping=True,
         control_freq=20,  # Control frequency
     )
-    env = RoboSuiteWrapper(env)
+    env = GymWrapper(env)
 
-    # agent = Agent(input_dims=env.observation_space.shape, env=env, n_actions=env.action_space.shape[0])
-    agent = Agent(input_dims=env.input_dims, env=env, n_actions=env.action_dim)
+    agent = Agent(input_dims=env.observation_space.shape, env=env, n_actions=env.action_space.shape[0], layer1_size=512, layer2_size=512)
+    # agent = Agent(input_dims=env.input_dims, env=env, n_actions=env.action_dim)
     writer = SummaryWriter('logs')
-    n_games = 250
+    n_games = 25000
     best_score = 0
     score_history = []
     load_checkpoint = False
-    episode_identifier = 0
+    episode_identifier = 2
 
     if load_checkpoint:
         agent.load_models()
