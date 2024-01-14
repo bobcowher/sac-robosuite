@@ -19,11 +19,11 @@ if __name__ == '__main__':
         robots=["Panda"],  # Use two Panda robots
         controller_configs=suite.load_controller_config(default_controller="JOINT_VELOCITY"),  # Controller
         # controller_configs=suite.load_controller_config(default_controller="OSC_POSE"),
-        has_renderer=False,  # Enable rendering
+        has_renderer=True,  # Enable rendering
         use_camera_obs=False,
-        horizon=300,
-        # render_camera="sideview",           # Camera view
-        # has_offscreen_renderer=True,        # No offscreen rendering
+        horizon=200,
+        render_camera="sideview",           # Camera view
+        has_offscreen_renderer=True,        # No offscreen rendering
         reward_shaping=True,
         control_freq=20,  # Control frequency
     )
@@ -31,12 +31,11 @@ if __name__ == '__main__':
 
     agent = Agent(input_dims=env.observation_space.shape, env=env, n_actions=env.action_space.shape[0], layer1_size=400, layer2_size=300)
     # agent = Agent(input_dims=env.input_dims, env=env, n_actions=env.action_dim)
-    writer = SummaryWriter('logs')
-    n_games = 100000
+    n_games = 5
     best_score = 0
     score_history = []
     load_checkpoint = False
-    episode_identifier = 1
+    episode_identifier = 4
 
     agent.load_models()
 
@@ -47,23 +46,8 @@ if __name__ == '__main__':
         while not done:
             action = agent.choose_action(observation)
             observation_, reward, done, info = env.step(action)
+            env.render()
             score += reward
             agent.remember(observation, action, reward, observation_, done)
-            agent.learn()
             observation = observation_
-        score_history.append(score)
-        writer.add_scalar(f"Score - {episode_identifier}", score, global_step=i)
-
-        if(len(score_history)>100):
-            avg_score = np.mean(score_history[-100])
-        else:
-            avg_score = np.mean(score_history)
-
-
-
-        if avg_score > best_score:
-            best_score = avg_score
-            agent.save_models()
-
-        print('episode ', i, 'score %.1f' % score, 'avg_score %.1f' % avg_score)
 

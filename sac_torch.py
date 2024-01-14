@@ -9,7 +9,7 @@ from networks import ActorNetwork, CriticNetwork, ValueNetwork
 
 class Agent():
     def __init__(self, alpha=0.0003, beta=0.0003, input_dims=[8], env=None, gamma=0.99, n_actions=2, max_size=100000,
-                 layer1_size=256, layer2_size=256, batch_size=256, reward_scale=2, tau=0.005):
+                 layer1_size=256, layer2_size=256, batch_size=256, reward_scale=5, tau=0.005):
         # reward scale depends on the complexity of the environment.
         # tau controls how we modulate our target to value network
         self.gamma = gamma
@@ -61,11 +61,17 @@ class Agent():
 
     def load_models(self):
         print('.... loading models ....')
-        self.actor.load_checkpoint()
-        self.value.load_checkpoint()
-        self.target_value.load_checkpoint()
-        self.critic_1.load_checkpoint()
-        self.critic_2.load_checkpoint()
+        try:
+            self.actor.load_checkpoint()
+            self.value.load_checkpoint()
+            self.target_value.load_checkpoint()
+            self.critic_1.load_checkpoint()
+            self.critic_2.load_checkpoint()
+            print("Successfully loaded all models.")
+        except:
+            print("Failed to load models. Starting new training process.")
+
+
 
     def learn(self):
         if self.memory.mem_ctr < self.batch_size:

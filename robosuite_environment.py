@@ -16,21 +16,6 @@ class RoboSuiteWrapper(Wrapper):
         self.max_action = 1
         self.input_dims = 84
 
-        # if not test:
-
-        # else:
-        #     self.env = suite.make(
-        #         env_name,  # Environment
-        #         robots=["Panda"],  # Use two Panda robots
-        #         controller_configs=suite.load_controller_config(default_controller="JOINT_VELOCITY"),  # Controller
-        #         has_renderer=True,  # Enable rendering
-        #         render_camera="sideview",           # Camera view
-        #         has_offscreen_renderer=True,        # No offscreen rendering
-        #         control_freq=20,  # Control frequency
-        #     )
-
-
-
     def step(self, action):
         observation, reward, done, info = super().step(action)
         observation = self.observation_to_tensor(observation)
