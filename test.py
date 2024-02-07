@@ -37,9 +37,10 @@ if __name__ == '__main__':
     load_checkpoint = False
     episode_identifier = 4
 
-    agent.load_models()
+
 
     for i in range(n_games):
+        agent.load_models()
         observation = env.reset()
         done = False
         score = 0

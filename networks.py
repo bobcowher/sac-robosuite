@@ -41,6 +41,7 @@ class CriticNetwork(nn.Module):
 
     def load_checkpoint(self):
         self.load_state_dict(T.load(self.checkpoint_file))
+        print(f"Successfully loaded {self.checkpoint_file} for {self.name}")
 
 class ValueNetwork(nn.Module):
     def __init__(self, beta, input_dims, fc1_dims=256, fc2_dims=256, name = 'value', chkpt_dir='tmp/sac'):
@@ -58,6 +59,7 @@ class ValueNetwork(nn.Module):
 
         self.optimizer = optim.Adam(self.parameters(), lr=beta)
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        print(f"Loading model on device {self.device}")
         self.to(self.device)
 
     def forward(self, state):
@@ -75,6 +77,7 @@ class ValueNetwork(nn.Module):
 
     def load_checkpoint(self):
         self.load_state_dict(T.load(self.checkpoint_file))
+        print(f"Successfully loaded {self.checkpoint_file} for {self.name}")
 
 
 class ActorNetwork(nn.Module):
@@ -98,6 +101,7 @@ class ActorNetwork(nn.Module):
 
         self.optimizer = optim.Adam(self.parameters(), lr=alpha)
         self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
+        print(f"Loading model on device {self.device}")
 
         self.to(self.device)
 
@@ -135,4 +139,5 @@ class ActorNetwork(nn.Module):
 
     def load_checkpoint(self):
         self.load_state_dict(T.load(self.checkpoint_file))
+        print(f"Successfully loaded {self.checkpoint_file} for {self.name}")
 

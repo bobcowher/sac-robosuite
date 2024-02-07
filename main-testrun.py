@@ -30,7 +30,7 @@ if __name__ == '__main__':
     env = GymWrapper(env)
 
     learning_rate = 0.0003
-    entropy_scale = 2
+    entropy_scale = 0.0005
     batch_size = 128
     layer1_size=256
     layer2_size=128
@@ -39,11 +39,11 @@ if __name__ == '__main__':
                   beta=learning_rate, entropy_scale=entropy_scale, batch_size=batch_size, gamma=0.99)
     # agent = Agent(input_dims=env.input_dims, env=env, n_actions=env.action_dim)
     writer = SummaryWriter('logs')
-    n_games = 10000
+    n_games = 100000
     best_score = 0
     score_history = []
     load_checkpoint = False
-    episode_identifier = f"8 lr={learning_rate} entropy_scale={entropy_scale} batch_size={batch_size} gamma=0.99 l1={layer1_size} l2={layer2_size}"
+    episode_identifier = f"0 lr={learning_rate} entropy_scale={entropy_scale} batch_size={batch_size} gamma=0.99 l1={layer1_size} l2={layer2_size}"
 
     models_loaded = agent.load_models()
 
