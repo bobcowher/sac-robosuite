@@ -56,7 +56,7 @@ if __name__ == '__main__':
 
 
     for _ in range(episodes):
-        agent.load_checkpoint(ckpt_path="tmp/sac")
+        agent.load_checkpoint(evaluate=True)
         state = env.reset()
         episode_reward = 0
         done = False

@@ -19,13 +19,13 @@ if __name__ == '__main__':
 
     env_name = "Door"
     replay_buffer_size = 10000000
-    episodes = 2000
-    warmup = 100
+    episodes = 5000
+    warmup = 20
     batch_size = 256
     updates_per_step = 1
     gamma = 0.99
     tau = 0.005
-    alpha = 0.2
+    alpha = 0.25 # Temperature parameter.
     policy = "Gaussian"
     target_update_interval = 1
     automatic_entropy_tuning = False
@@ -70,7 +70,7 @@ if __name__ == '__main__':
         state = env.reset()
 
         while not done:
-            if warmup > total_numsteps:
+            if warmup > i_episode:
                 action = env.action_space.sample()  # Sample random action
             else:
                 action = agent.select_action(state)  # Sample action from policy
@@ -108,7 +108,7 @@ if __name__ == '__main__':
                                                                                       episode_steps,
                                                                                       round(episode_reward, 2)))
         if i_episode % 10 == 0:
-            agent.save_checkpoint(env_name=env_name, ckpt_path="tmp/sac")
+            agent.save_checkpoint(env_name=env_name)
 
 
     env.close()
