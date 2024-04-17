@@ -21,15 +21,15 @@ if __name__ == '__main__':
     replay_buffer_size = 10000000
     episodes = 5000
     warmup = 20
-    batch_size = 256
+    batch_size = 128
     updates_per_step = 1
     gamma = 0.99
     tau = 0.005
-    alpha = 0.25 # Temperature parameter.
+    alpha = 0.2 # Temperature parameter.
     policy = "Gaussian"
     target_update_interval = 1
     automatic_entropy_tuning = False
-    hidden_size = 256
+    hidden_size = 512
     learning_rate = 0.0003
     horizon=300 # max episode steps
 

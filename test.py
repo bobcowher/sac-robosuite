@@ -29,7 +29,7 @@ if __name__ == '__main__':
     policy = "Gaussian"
     target_update_interval = 1
     automatic_entropy_tuning = False
-    hidden_size = 256
+    hidden_size = 512
     learning_rate = 0.0003
     horizon=300 # max episode steps
 
@@ -67,6 +67,8 @@ if __name__ == '__main__':
             episode_reward += reward
 
             state = next_state
+
+        print(f"Finished with a reward of {episode_reward}")
 
 
     env.close()
