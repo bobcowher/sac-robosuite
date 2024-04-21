@@ -132,6 +132,7 @@ class SAC(object):
             self.policy.load_checkpoint()
             self.critic.load_checkpoint()
             self.critic_target.load_checkpoint()
+            print('Successfully loaded models')
         except:
             print("Unable to load models. Starting from scratch")
 

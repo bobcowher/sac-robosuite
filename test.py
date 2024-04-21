@@ -14,10 +14,7 @@ from robosuite.wrappers import GymWrapper
 
 if __name__ == '__main__':
 
-    if not os.path.exists("tmp/td3"):
-        os.makedirs("tmp/td3")
-
-    env_name = "Door"
+    env_name = "Stack"
     replay_buffer_size = 10000000
     episodes = 3
     warmup = 100
@@ -29,9 +26,9 @@ if __name__ == '__main__':
     policy = "Gaussian"
     target_update_interval = 1
     automatic_entropy_tuning = False
-    hidden_size = 512
+    hidden_size = 756
     learning_rate = 0.0003
-    horizon=300 # max episode steps
+    horizon=500 # max episode steps
 
     env = suite.make(
         env_name,  # Environment

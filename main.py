@@ -14,24 +14,21 @@ from robosuite.wrappers import GymWrapper
 
 if __name__ == '__main__':
 
-    if not os.path.exists("tmp/td3"):
-        os.makedirs("tmp/td3")
-
-    env_name = "Door"
+    env_name = "Stack"
     replay_buffer_size = 10000000
-    episodes = 5000
+    episodes = 10000
     warmup = 20
-    batch_size = 128
+    batch_size = 64
     updates_per_step = 1
     gamma = 0.99
     tau = 0.005
-    alpha = 0.2 # Temperature parameter.
+    alpha = 0.15 # Temperature parameter.
     policy = "Gaussian"
     target_update_interval = 1
     automatic_entropy_tuning = False
-    hidden_size = 512
-    learning_rate = 0.0003
-    horizon=300 # max episode steps
+    hidden_size = 756
+    learning_rate = 0.0001
+    horizon=500 # max episode steps
 
     env = suite.make(
         env_name,  # Environment
@@ -52,6 +49,8 @@ if __name__ == '__main__':
     agent = SAC(env.observation_space.shape[0], env.action_space, gamma=gamma, tau=tau, alpha=alpha, policy=policy,
                 target_update_interval=target_update_interval, automatic_entropy_tuning=automatic_entropy_tuning,
                 hidden_size=hidden_size, learning_rate=learning_rate)
+
+    agent.load_checkpoint()
 
     # Tesnorboard
     writer = SummaryWriter(f'runs/{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_SAC')
