@@ -1,7 +1,7 @@
 import os
 import torch
 import torch.nn.functional as F
-from torch.optim import Adam
+from torch.optim import Adam, AdamW
 from sac_utils import *
 from model import *
 
@@ -21,7 +21,7 @@ class SAC(object):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.critic = QNetwork(num_inputs, action_space.shape[0], hidden_size).to(device=self.device)
-        self.critic_optim = Adam(self.critic.parameters(), lr=learning_rate)
+        self.critic_optim = AdamW(self.critic.parameters(), lr=0.001)
 
         self.critic_target = QNetwork(num_inputs, action_space.shape[0], hidden_size).to(self.device)
         hard_update(self.critic_target, self.critic)

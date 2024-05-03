@@ -33,7 +33,7 @@ if __name__ == '__main__':
     env = suite.make(
         env_name,  # Environment
         robots=["Panda"],  # Use two Panda robots
-        controller_configs=suite.load_controller_config(default_controller="JOINT_VELOCITY"),  # Controller
+        controller_configs=suite.load_controller_config(default_controller="OSC_POSE"),  # Controller
         # controller_configs=suite.load_controller_config(default_controller="OSC_POSE"),
         has_renderer=True,  # Enable rendering
         use_camera_obs=False,
@@ -64,6 +64,7 @@ if __name__ == '__main__':
             episode_reward += reward
 
             state = next_state
+            print(state)
 
         print(f"Finished with a reward of {episode_reward}")
 

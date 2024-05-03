@@ -11,6 +11,7 @@ import os
 import shutil
 import time
 from glob import glob
+from buffer import ReplayBuffer
 
 import h5py
 import numpy as np
@@ -24,8 +25,8 @@ from robosuite.wrappers import GymWrapper
 from robosuite.devices import Keyboard
 
 
-def collect_human_trajectory(env, device, arm, env_configuration):
-    env.reset()
+def collect_human_trajectory(env, device, arm, env_configuration, memory):
+    state = env.reset()
 
     # ID = 2 always corresponds to agentview
     env.render()
@@ -50,8 +51,15 @@ def collect_human_trajectory(env, device, arm, env_configuration):
             break
 
         # Run environment step
-        env.step(action)
+        next_state, reward, done, _ = env.step(action)
+        mask = float(not done)
+
         env.render()
+
+        memory.store_transition(state, action, reward, next_state, mask)  # Append transition to memory
+        print(f"State: {state}, Action: {action}, reward: {reward}, next_state: {next_state}, mask: {mask}")
+
+        state = next_state
 
         # Also break if we complete the task
         if task_completion_hold_count == 0:
@@ -83,6 +91,8 @@ if __name__ == "__main__":
 
     pos_sensitivity = 1.0
     rot_sensitivity = 1.0
+
+    replay_buffer_size = 1000000
 
     env_name = "Stack"
 
@@ -124,6 +134,10 @@ if __name__ == "__main__":
     # make a new timestamped directory
     t1, t2 = str(time.time()).split(".")
 
+    memory = ReplayBuffer(replay_buffer_size, input_shape=env.observation_space.shape, n_actions=env.action_space.shape[0])
+
     # collect demonstrations
     while True:
-        collect_human_trajectory(env, device, arm, arm_config)
+        collect_human_trajectory(env, device, arm, arm_config, memory)
+        memory.save_to_csv(filename='checkpoints/human_memory.npz')
+        break

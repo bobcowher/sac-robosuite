@@ -22,7 +22,7 @@ if __name__ == '__main__':
     updates_per_step = 1
     gamma = 0.99
     tau = 0.005
-    alpha = 0.15 # Temperature parameter.
+    alpha = 0.2 # Temperature parameter.
     policy = "Gaussian"
     target_update_interval = 1
     automatic_entropy_tuning = False
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     env = suite.make(
         env_name,  # Environment
         robots=["Panda"],  # Use two Panda robots
-        controller_configs=suite.load_controller_config(default_controller="JOINT_VELOCITY"),  # Controller
+        controller_configs=suite.load_controller_config(default_controller="OSC_POSE"),  # Controller
         # controller_configs=suite.load_controller_config(default_controller="OSC_POSE"),
         has_renderer=False,  # Enable rendering
         use_camera_obs=False,
@@ -58,8 +58,29 @@ if __name__ == '__main__':
     # Memory
     memory = ReplayBuffer(replay_buffer_size, input_shape=env.observation_space.shape, n_actions=env.action_space.shape[0])
 
+    memory.load_from_csv()
+
     # Training Loop
     total_numsteps = 0
+    updates = 0
+
+    # print("Starting pre-training")
+    # for i in range(1000):
+    #     critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = agent.update_parameters(memory,
+    #                                                                                          batch_size=16,
+    #                                                                                          updates=updates)
+    #     if i % 50 == 0:
+    #         print(f"Iteration: {i}")
+    #         print(f"loss/critic_1: {critic_1_loss}, updates: {updates}")
+    #         print(f"loss/critic_2: {critic_2_loss}, updates: {updates}")
+    #         print(f"loss/policy: {policy_loss}, updates: {updates}")
+    #         print(f"loss/entropy_loss: {ent_loss}, updates: {updates}")
+    #         print(f"entropy_temprature/alpha: {alpha}, updates: {updates}")
+    #
+    #     updates += 1
+    #
+    # print("Completing pre-training. Beginning live training.")
+
     updates = 0
 
     for i_episode in range(episodes):
@@ -108,6 +129,8 @@ if __name__ == '__main__':
                                                                                       round(episode_reward, 2)))
         if i_episode % 10 == 0:
             agent.save_checkpoint(env_name=env_name)
+            memory.save_to_csv()
+
 
 
     env.close()
