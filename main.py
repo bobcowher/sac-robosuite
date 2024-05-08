@@ -22,11 +22,11 @@ if __name__ == '__main__':
     updates_per_step = 1
     gamma = 0.99
     tau = 0.005
-    alpha = 0.2 # Temperature parameter.
+    alpha = 0.3 # Temperature parameter.
     policy = "Gaussian"
     target_update_interval = 1
     automatic_entropy_tuning = False
-    hidden_size = 756
+    hidden_size = 512
     learning_rate = 0.0001
     horizon=500 # max episode steps
 
@@ -50,15 +50,17 @@ if __name__ == '__main__':
                 target_update_interval=target_update_interval, automatic_entropy_tuning=automatic_entropy_tuning,
                 hidden_size=hidden_size, learning_rate=learning_rate)
 
-    agent.load_checkpoint()
+    # agent.load_checkpoint()
 
     # Tesnorboard
-    writer = SummaryWriter(f'runs/{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_SAC')
+    episode_identifier = f"Adam - lr: {learning_rate} - Layers: 2 - HL: {hidden_size} - leaky relu"
+
+    writer = SummaryWriter(f'runs/{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_{episode_identifier}')
 
     # Memory
     memory = ReplayBuffer(replay_buffer_size, input_shape=env.observation_space.shape, n_actions=env.action_space.shape[0])
 
-    memory.load_from_csv()
+    # memory.load_from_csv()
 
     # Training Loop
     total_numsteps = 0
