@@ -3,3 +3,5 @@ tmp
 logs
 __pycache__
 .idea
+checkpoints
+*.tar.gz
