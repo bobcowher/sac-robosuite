@@ -82,6 +82,7 @@ class GaussianPolicy(nn.Module):
 
     def forward(self, state):
         x = F.relu(self.linear1(state))
+        x = F.dropout(x, p=0.5)
         x = F.relu(self.linear2(x))
         mean = self.mean_linear(x)
         log_std = self.log_std_linear(x)
