@@ -50,7 +50,7 @@ if __name__ == '__main__':
                 target_update_interval=target_update_interval, automatic_entropy_tuning=automatic_entropy_tuning,
                 hidden_size=hidden_size, learning_rate=learning_rate)
 
-
+    agent.set_mode("eval")
 
     for _ in range(episodes):
         agent.load_checkpoint(evaluate=True)

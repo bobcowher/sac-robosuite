@@ -145,5 +145,12 @@ class SAC(object):
             self.critic.train()
             self.critic_target.train()
 
-
+    def set_mode(self, mode):
+        if(mode == "train"):
+            self.policy.train()
+        elif(mode == "eval"):
+            self.policy.eval()
+        else:
+            print("Invalid mode selected")
+            raise Exception
 
