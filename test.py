@@ -29,6 +29,8 @@ if __name__ == '__main__':
     hidden_size = 756
     learning_rate = 0.0003
     horizon=500 # max episode steps
+    exploration_scaling_factor=0.1
+
 
     env = suite.make(
         env_name,  # Environment
@@ -48,7 +50,7 @@ if __name__ == '__main__':
     # Agent
     agent = SAC(env.observation_space.shape[0], env.action_space, gamma=gamma, tau=tau, alpha=alpha, policy=policy,
                 target_update_interval=target_update_interval, automatic_entropy_tuning=automatic_entropy_tuning,
-                hidden_size=hidden_size, learning_rate=learning_rate)
+                hidden_size=hidden_size, learning_rate=learning_rate, exploration_scaling_factor=exploration_scaling_factor)
 
     agent.set_mode("eval")
 

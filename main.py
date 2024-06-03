@@ -22,13 +22,14 @@ if __name__ == '__main__':
     updates_per_step = 1
     gamma = 0.99
     tau = 0.005
-    alpha = 0.15 # Temperature parameter.
+    alpha = 0.1 # Temperature parameter.
     policy = "Gaussian"
     target_update_interval = 1
     automatic_entropy_tuning = False
     hidden_size = 756
     learning_rate = 0.0001
     horizon=500 # max episode steps
+    exploration_scaling_factor=0.2
 
     env = suite.make(
         env_name,  # Environment
@@ -48,12 +49,12 @@ if __name__ == '__main__':
     # Agent
     agent = SAC(env.observation_space.shape[0], env.action_space, gamma=gamma, tau=tau, alpha=alpha, policy=policy,
                 target_update_interval=target_update_interval, automatic_entropy_tuning=automatic_entropy_tuning,
-                hidden_size=hidden_size, learning_rate=learning_rate)
+                hidden_size=hidden_size, learning_rate=learning_rate, exploration_scaling_factor=exploration_scaling_factor)
 
     agent.load_checkpoint()
 
     # Tesnorboard
-    writer = SummaryWriter(f'runs/{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_SAC')
+    writer = SummaryWriter(f'runs/{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_exploration_scaling={exploration_scaling_factor}')
 
     # Memory
     memory = ReplayBuffer(replay_buffer_size, input_shape=env.observation_space.shape, n_actions=env.action_space.shape[0])
@@ -78,7 +79,7 @@ if __name__ == '__main__':
                 # Number of updates per step in environment
                 for i in range(updates_per_step):
                     # Update parameters of all the networks
-                    critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = agent.update_parameters(memory,
+                    critic_1_loss, critic_2_loss, policy_loss, ent_loss, prediction_error_loss, alpha = agent.update_parameters(memory,
                                                                                                          batch_size,
                                                                                                          updates)
 
@@ -86,6 +87,7 @@ if __name__ == '__main__':
                     writer.add_scalar('loss/critic_2', critic_2_loss, updates)
                     writer.add_scalar('loss/policy', policy_loss, updates)
                     writer.add_scalar('loss/entropy_loss', ent_loss, updates)
+                    writer.add_scalar('loss/prediction_error', prediction_error_loss, updates)
                     writer.add_scalar('entropy_temprature/alpha', alpha, updates)
                     updates += 1
 

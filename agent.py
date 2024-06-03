@@ -8,7 +8,7 @@ from model import *
 
 class SAC(object):
     def __init__(self, num_inputs, action_space, gamma, tau, alpha, policy, target_update_interval,
-                 automatic_entropy_tuning, hidden_size, learning_rate):
+                 automatic_entropy_tuning, hidden_size, learning_rate, exploration_scaling_factor):
 
         self.gamma = gamma
         self.tau = tau
@@ -25,6 +25,12 @@ class SAC(object):
 
         self.critic_target = QNetwork(num_inputs, action_space.shape[0], hidden_size).to(self.device)
         hard_update(self.critic_target, self.critic)
+
+        # Initialize the predictive model
+        self.predictive_model = PredictiveModel(num_inputs, action_space.shape[0], hidden_size).to(self.device)
+        self.predictive_model_optim = Adam(self.predictive_model.parameters(), lr=learning_rate)
+
+        self.exploration_scaling_factor = exploration_scaling_factor
 
         if self.policy_type == "Gaussian":
             # Target Entropy = −dim(A) (e.g. , -6 for HalfCheetah-v2) as given in the paper
@@ -60,6 +66,17 @@ class SAC(object):
         reward_batch = torch.FloatTensor(reward_batch).to(self.device).unsqueeze(1)
         mask_batch = torch.FloatTensor(mask_batch).to(self.device).unsqueeze(1)
 
+        # Predict the next state using the predictive model
+        predicted_next_state = self.predictive_model(state_batch, action_batch)
+
+        # Calculate prediction loss as an intrinsic reward
+        prediction_error = F.mse_loss(predicted_next_state, next_state_batch)
+        # intrinsic_reward = prediction_error.unsqueeze(1)  # Make sure it has the correct shape
+        
+        # Add intrinsic reward to the reward batch (with a scaling factor if needed)
+        scaled_intrinsic_reward = prediction_error * self.exploration_scaling_factor
+        reward_batch += scaled_intrinsic_reward
+
         with torch.no_grad():
             next_state_action, next_state_log_pi, _ = self.policy.sample(next_state_batch)
             qf1_next_target, qf2_next_target = self.critic_target(next_state_batch, next_state_action)
@@ -71,9 +88,15 @@ class SAC(object):
         qf2_loss = F.mse_loss(qf2, next_q_value)  # JQ = 𝔼(st,at)~D[0.5(Q1(st,at) - r(st,at) - γ(𝔼st+1~p[V(st+1)]))^2]
         qf_loss = qf1_loss + qf2_loss
 
+        # Update the critic network
         self.critic_optim.zero_grad()
         qf_loss.backward()
         self.critic_optim.step()
+
+        # Update the predictive model
+        self.predictive_model_optim.zero_grad()
+        prediction_error.backward()
+        self.predictive_model_optim.step()
 
         pi, log_pi, _ = self.policy.sample(state_batch)
 
@@ -103,16 +126,9 @@ class SAC(object):
         if updates % self.target_update_interval == 0:
             soft_update(self.critic_target, self.critic, self.tau)
 
-        return qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item(), alpha_tlogs.item()
+        return qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item(), prediction_error.item(), alpha_tlogs.item()
 
 
-    def save_models(self):
-        self.actor.save_checkpoint()
-        self.target_actor.save_checkpoint()
-        self.critic_1.save_checkpoint()
-        self.critic_2.save_checkpoint()
-        self.target_critic_1.save_checkpoint()
-        self.target_critic_2.save_checkpoint()
     # Save model parameters
     def save_checkpoint(self, env_name, suffix=""):
         if not os.path.exists('checkpoints/'):
@@ -122,7 +138,7 @@ class SAC(object):
         self.policy.save_checkpoint()
         self.critic.save_checkpoint()
         self.critic_target.save_checkpoint()
-
+        self.predictive_model.save_checkpoint()
 
     # Load model parameters
     def load_checkpoint(self, evaluate=False):
@@ -132,6 +148,7 @@ class SAC(object):
             self.policy.load_checkpoint()
             self.critic.load_checkpoint()
             self.critic_target.load_checkpoint()
+            self.predictive_model.load_checkpoint()
             print('Successfully loaded models')
         except:
             print("Unable to load models. Starting from scratch")
