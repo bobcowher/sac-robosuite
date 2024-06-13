@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.optim import Adam
 from sac_utils import *
 from model import *
+import sys
 
 
 class SAC(object):
@@ -74,8 +75,17 @@ class SAC(object):
         # intrinsic_reward = prediction_error.unsqueeze(1)  # Make sure it has the correct shape
         
         # Add intrinsic reward to the reward batch (with a scaling factor if needed)
-        scaled_intrinsic_reward = prediction_error * self.exploration_scaling_factor
+        scaled_intrinsic_reward = self.exploration_scaling_factor * ((predicted_next_state - next_state_batch).pow(2)).mean(dim=1)
+
+        scaled_intrinsic_reward = torch.reshape(scaled_intrinsic_reward, (batch_size, 1))
+
+        # print(f"Scaled intrinsic reward: {scaled_intrinsic_reward}")
+        # print(f"Reward batch before update: {reward_batch}")
+
         reward_batch += scaled_intrinsic_reward
+
+        # print(f"Reward batch after update: {reward_batch}")
+
 
         with torch.no_grad():
             next_state_action, next_state_log_pi, _ = self.policy.sample(next_state_batch)

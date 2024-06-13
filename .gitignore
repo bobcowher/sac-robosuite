@@ -3,5 +3,6 @@ tmp
 logs
 __pycache__
 .idea
-checkpoints
+checkpoints*
 *.tar.gz
+entropy_logs

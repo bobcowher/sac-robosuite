@@ -51,10 +51,10 @@ if __name__ == '__main__':
                 target_update_interval=target_update_interval, automatic_entropy_tuning=automatic_entropy_tuning,
                 hidden_size=hidden_size, learning_rate=learning_rate, exploration_scaling_factor=exploration_scaling_factor)
 
-    agent.load_checkpoint()
+    # agent.load_checkpoint()
 
     # Tesnorboard
-    writer = SummaryWriter(f'runs/{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_exploration_scaling={exploration_scaling_factor}')
+    writer = SummaryWriter(f'runs/{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_lr={learning_rate}_exploration_scaling={exploration_scaling_factor}_double')
 
     # Memory
     memory = ReplayBuffer(replay_buffer_size, input_shape=env.observation_space.shape, n_actions=env.action_space.shape[0])
