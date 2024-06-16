@@ -5,7 +5,7 @@ from torch.optim import Adam
 from sac_utils import *
 from model import *
 import sys
-
+import time
 
 class SAC(object):
     def __init__(self, num_inputs, action_space, gamma, tau, alpha, policy, target_update_interval,
@@ -72,20 +72,34 @@ class SAC(object):
 
         # Calculate prediction loss as an intrinsic reward
         prediction_error = F.mse_loss(predicted_next_state, next_state_batch)
+        prediction_error_no_reduction = F.mse_loss(predicted_next_state, next_state_batch, reduce=False)
         # intrinsic_reward = prediction_error.unsqueeze(1)  # Make sure it has the correct shape
         
         # Add intrinsic reward to the reward batch (with a scaling factor if needed)
-        scaled_intrinsic_reward = self.exploration_scaling_factor * ((predicted_next_state - next_state_batch).pow(2)).mean(dim=1)
+        # print("Predicted next state:")
+        # print(predicted_next_state)
+        # print("Next state batch:")
+        # print(next_state_batch)
 
-        scaled_intrinsic_reward = torch.reshape(scaled_intrinsic_reward, (batch_size, 1))
+        scaled_intrinsic_reward = prediction_error_no_reduction.mean(dim=1)
+        scaled_intrinsic_reward = self.exploration_scaling_factor * torch.reshape(scaled_intrinsic_reward, (batch_size, 1))
+
+
+        # print("Scaled Intrinsic Reward")
+        # print(scaled_intrinsic_reward)
+        # print("Scaled Intrinsic Reward (New)")
+        # print(f"Shape: {scaled_intrinsic_reward_new.shape}")
+        # print(scaled_intrinsic_reward_new)
+
 
         # print(f"Scaled intrinsic reward: {scaled_intrinsic_reward}")
         # print(f"Reward batch before update: {reward_batch}")
 
-        reward_batch += scaled_intrinsic_reward
+        reward_batch = reward_batch + scaled_intrinsic_reward
 
         # print(f"Reward batch after update: {reward_batch}")
 
+        # print(time.sleep(10))
 
         with torch.no_grad():
             next_state_action, next_state_log_pi, _ = self.policy.sample(next_state_batch)

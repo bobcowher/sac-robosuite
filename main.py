@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
     env_name = "Stack"
     replay_buffer_size = 10000000
-    episodes = 10000
+    episodes = 20000
     warmup = 20
     batch_size = 64
     updates_per_step = 1
@@ -27,9 +27,9 @@ if __name__ == '__main__':
     target_update_interval = 1
     automatic_entropy_tuning = False
     hidden_size = 756
-    learning_rate = 0.0001
+    learning_rate = 0.00015
     horizon=500 # max episode steps
-    exploration_scaling_factor=0.2
+    exploration_scaling_factor=0.01
 
     env = suite.make(
         env_name,  # Environment
@@ -51,7 +51,7 @@ if __name__ == '__main__':
                 target_update_interval=target_update_interval, automatic_entropy_tuning=automatic_entropy_tuning,
                 hidden_size=hidden_size, learning_rate=learning_rate, exploration_scaling_factor=exploration_scaling_factor)
 
-    # agent.load_checkpoint()
+    agent.load_checkpoint()
 
     # Tesnorboard
     writer = SummaryWriter(f'runs/{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_lr={learning_rate}_exploration_scaling={exploration_scaling_factor}_double')
