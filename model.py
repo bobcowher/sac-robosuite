@@ -84,6 +84,7 @@ class GaussianPolicy(nn.Module):
         
         self.linear1 = nn.Linear(num_inputs, hidden_dim)
         self.linear2 = nn.Linear(hidden_dim, hidden_dim)
+        self.linear3 = nn.Linear(hidden_dim, hidden_dim)
 
         self.mean_linear = nn.Linear(hidden_dim, num_actions)
         self.log_std_linear = nn.Linear(hidden_dim, num_actions)
@@ -108,6 +109,8 @@ class GaussianPolicy(nn.Module):
         x = F.relu(self.linear1(state))
         x = F.dropout(x, p=0.5)
         x = F.relu(self.linear2(x))
+        x = F.dropout(x, p=0.5)
+        x = F.relu(self.linear3(x))
         mean = self.mean_linear(x)
         log_std = self.log_std_linear(x)
         log_std = torch.clamp(log_std, min=LOG_SIG_MIN, max=LOG_SIG_MAX)

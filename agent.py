@@ -73,27 +73,9 @@ class SAC(object):
         # Calculate prediction loss as an intrinsic reward
         prediction_error = F.mse_loss(predicted_next_state, next_state_batch)
         prediction_error_no_reduction = F.mse_loss(predicted_next_state, next_state_batch, reduce=False)
-        # intrinsic_reward = prediction_error.unsqueeze(1)  # Make sure it has the correct shape
-        
-        # Add intrinsic reward to the reward batch (with a scaling factor if needed)
-        # print("Predicted next state:")
-        # print(predicted_next_state)
-        # print("Next state batch:")
-        # print(next_state_batch)
 
         scaled_intrinsic_reward = prediction_error_no_reduction.mean(dim=1)
         scaled_intrinsic_reward = self.exploration_scaling_factor * torch.reshape(scaled_intrinsic_reward, (batch_size, 1))
-
-
-        # print("Scaled Intrinsic Reward")
-        # print(scaled_intrinsic_reward)
-        # print("Scaled Intrinsic Reward (New)")
-        # print(f"Shape: {scaled_intrinsic_reward_new.shape}")
-        # print(scaled_intrinsic_reward_new)
-
-
-        # print(f"Scaled intrinsic reward: {scaled_intrinsic_reward}")
-        # print(f"Reward batch before update: {reward_batch}")
 
         reward_batch = reward_batch + scaled_intrinsic_reward
 
