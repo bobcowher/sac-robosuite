@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.optim import Adam, AdamW
 from sac_utils import *
 from model import *
+import time
 
 
 class SAC(object):
@@ -50,7 +51,77 @@ class SAC(object):
             _, _, action = self.policy.sample(state)
         return action.detach().cpu().numpy()[0]
 
-    def update_parameters(self, memory, batch_size, updates):
+    def pretrain_policy(self, memory, batch_size):
+        # Sample a batch from memory
+        state_batch, action_batch, reward_batch, next_state_batch, mask_batch = memory.sample_buffer(batch_size=batch_size)
+
+        state_batch = torch.FloatTensor(state_batch).to(self.device)
+        action_batch = torch.FloatTensor(action_batch).to(self.device)
+
+        pi, log_pi, _ = self.policy.sample(state_batch)
+
+        # print("pi", pi)
+        # print("action_batch", action_batch)
+
+        policy_loss = F.mse_loss(pi, action_batch)
+
+        self.policy_optim.zero_grad()
+        policy_loss.backward()
+        self.policy_optim.step()
+
+        return policy_loss.item()
+
+    def pretrain_critic(self, memory, batch_size):
+        # Sample a batch from memory
+        state_batch, action_batch, reward_batch, next_state_batch, mask_batch = memory.sample_buffer(batch_size=batch_size)
+
+        # Convert to PyTorch tensors and move to the appropriate device
+        state_batch = torch.FloatTensor(state_batch).to(self.device)
+        action_batch = torch.FloatTensor(action_batch).to(self.device)
+        reward_batch = torch.FloatTensor(reward_batch).to(self.device)
+        next_state_batch = torch.FloatTensor(next_state_batch).to(self.device)
+        mask_batch = torch.FloatTensor(mask_batch).to(self.device)
+
+        with torch.no_grad():
+            # Compute Q-values for the next states and actions using the target critic network
+            qf1_next_target, qf2_next_target = self.critic_target(next_state_batch, action_batch)
+            min_qf_next_target = torch.min(qf1_next_target, qf2_next_target)
+
+            # Calculate the next Q-value target
+            next_q_value = reward_batch.unsqueeze(1) + mask_batch.unsqueeze(1) * self.gamma * min_qf_next_target
+
+        # Ensure next_q_value has the correct shape
+        next_q_value = next_q_value.view(batch_size, -1)
+
+        # Get current Q estimates
+        qf1, qf2 = self.critic(state_batch, action_batch)
+
+        # Ensure qf1 and qf2 have the correct shape
+        qf1 = qf1.view(batch_size, -1)
+        qf2 = qf2.view(batch_size, -1)
+
+        # Calculate critic losses
+        qf1_loss = F.mse_loss(qf1, next_q_value)
+        qf2_loss = F.mse_loss(qf2, next_q_value)
+        critic_loss = qf1_loss + qf2_loss
+
+        # Optimize the critic
+        self.critic_optim.zero_grad()
+        critic_loss.backward()
+
+        # Apply gradient clipping
+        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=1.0)
+
+        self.critic_optim.step()
+
+        # Update target networks using soft update
+        for target_param, param in zip(self.critic_target.parameters(), self.critic.parameters()):
+            target_param.data.copy_(self.tau * param.data + (1.0 - self.tau) * target_param.data)
+
+        return critic_loss.item()
+
+
+    def update_parameters(self, memory, batch_size, updates, human=False):
         # Sample a batch from memory
         state_batch, action_batch, reward_batch, next_state_batch, mask_batch = memory.sample_buffer(batch_size=batch_size)
 
@@ -80,7 +151,10 @@ class SAC(object):
         qf1_pi, qf2_pi = self.critic(state_batch, pi)
         min_qf_pi = torch.min(qf1_pi, qf2_pi)
 
-        policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean() # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
+        if human == True:
+            policy_loss = F.mse_loss(pi, action_batch)
+        else:
+            policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean() # Jπ = 𝔼st∼D,εt∼N[α * logπ(f(εt;st)|st) − Q(st,f(εt;st))]
 
         self.policy_optim.zero_grad()
         policy_loss.backward()
