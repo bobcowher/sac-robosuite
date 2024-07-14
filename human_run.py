@@ -55,9 +55,10 @@ def collect_human_trajectory(env, device, arm, env_configuration, memory):
         mask = float(not done)
 
         env.render()
+        time.sleep(0.1)
 
         memory.store_transition(state, action, reward, next_state, mask)  # Append transition to memory
-        print(f"State: {state}, Action: {action}, reward: {reward}, next_state: {next_state}, mask: {mask}")
+        # print(f"State: {state}, Action: {action}, reward: {reward}, next_state: {next_state}, mask: {mask}")
 
         state = next_state
 
@@ -136,8 +137,14 @@ if __name__ == "__main__":
 
     memory = ReplayBuffer(replay_buffer_size, input_shape=env.observation_space.shape, n_actions=env.action_space.shape[0])
 
+    memory.load_from_csv(filename='checkpoints/human_memory.npz')
+
+    starting_memory_size = memory.mem_ctr
+
+    print(f"Starting memory size is {starting_memory_size}")
+
     # collect demonstrations
     while True:
         collect_human_trajectory(env, device, arm, arm_config, memory)
         memory.save_to_csv(filename='checkpoints/human_memory.npz')
-        break
+        print(f"Memory size: {memory.mem_ctr}. Successfully added {memory.mem_ctr - starting_memory_size} steps to memory")
