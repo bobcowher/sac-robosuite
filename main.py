@@ -3,13 +3,42 @@ import os
 import gym
 import pybullet_envs
 import numpy as np
-from buffer import ReplayBuffer
+from buffer import ReplayBuffer, CombinedReplayBuffer
 import datetime
 from agent import SAC
 from torch.utils.tensorboard import SummaryWriter
 import robosuite as suite
 # from robosuite_environment import RoboSuiteWrapper
 from robosuite.wrappers import GymWrapper
+
+
+def play_test_round(agent : SAC, env, iteration : int):
+    episode_reward = 0
+    episode_steps = 0
+    done = False
+    state = env.reset()
+    horizon = 500
+
+    episode_steps = 0
+
+    while not done:
+        action = agent.select_action(state)  # Sample action from policy
+
+        next_state, reward, done, _ = env.step(action)  # Step
+        episode_steps += 1
+        episode_reward += reward
+
+        # Ignore the "done" signal if it comes from hitting the time horizon.
+        # (https://github.com/openai/spinningup/blob/master/spinup/algos/sac/sac.py)
+        mask = 1 if episode_steps == horizon else float(not done)
+
+        memory.store_transition(state, action, reward, next_state, mask)  # Append transition to memory
+
+        state = next_state
+    
+    print(f"Completed test round #{iteration} with a score of {episode_reward}")
+
+    return(episode_reward)
 
 
 if __name__ == '__main__':
@@ -19,16 +48,19 @@ if __name__ == '__main__':
     episodes = 10000
     warmup = 20
     batch_size = 64
+    pretrain_batch_size = 16
     updates_per_step = 1
     gamma = 0.99
     tau = 0.005
-    alpha = 0.3 # Temperature parameter.
+    alpha = 0.1 # Temperature parameter.
     policy = "Gaussian"
     target_update_interval = 1
     automatic_entropy_tuning = False
-    hidden_size = 512
+    hidden_size = 756
     learning_rate = 0.0001
     horizon=500 # max episode steps
+    human_data_ratio = 0.1
+    live_data_ratio = 1 - human_data_ratio
 
     env = suite.make(
         env_name,  # Environment
@@ -53,35 +85,42 @@ if __name__ == '__main__':
     # agent.load_checkpoint()
 
     # Tesnorboard
-    episode_identifier = f"Adam - lr: {learning_rate} - Layers: 2 - HL: {hidden_size} - leaky relu"
+    episode_identifier = f"Adam - lr: {learning_rate} - Layers: 2 - HL: {hidden_size} - human-clone-policy-only"
 
     writer = SummaryWriter(f'runs/{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_{episode_identifier}')
 
     # Memory
     memory = ReplayBuffer(replay_buffer_size, input_shape=env.observation_space.shape, n_actions=env.action_space.shape[0])
 
-    # memory.load_from_csv()
+    # human_memory = ReplayBuffer(replay_buffer_size, input_shape=env.observation_space.shape, n_actions=env.action_space.shape[0])
+
+    memory.load_from_csv(filename='checkpoints/human_memory.npz')
+
+    # combined_memory = CombinedReplayBuffer(buffers=[human_memory, memory], percentages=[human_data_ratio, live_data_ratio])
 
     # Training Loop
     total_numsteps = 0
     updates = 0
 
-    # print("Starting pre-training")
-    # for i in range(1000):
-    #     critic_1_loss, critic_2_loss, policy_loss, ent_loss, alpha = agent.update_parameters(memory,
-    #                                                                                          batch_size=16,
-    #                                                                                          updates=updates)
-    #     if i % 50 == 0:
-    #         print(f"Iteration: {i}")
-    #         print(f"loss/critic_1: {critic_1_loss}, updates: {updates}")
-    #         print(f"loss/critic_2: {critic_2_loss}, updates: {updates}")
-    #         print(f"loss/policy: {policy_loss}, updates: {updates}")
-    #         print(f"loss/entropy_loss: {ent_loss}, updates: {updates}")
-    #         print(f"entropy_temprature/alpha: {alpha}, updates: {updates}")
-    #
+    print("Starting pre-training")
+    for i in range(100000):
+        policy_loss = agent.pretrain_policy(memory, batch_size=pretrain_batch_size)
+        # critic_loss = agent.pretrain_critic(memory, batch_size=pretrain_batch_size)
+        
+        writer.add_scalar('loss/policy_pre_train', policy_loss, i)
+        # writer.add_scalar('loss/critic_pre_train', critic_loss, i)
+
+        if i % 1000 == 0:
+            print(f"Iteration: {i}")
+            print(f"loss/policy_pre_train: {policy_loss}, updates: {i}")
+            # print(f"loss/critic_pre_train: {critic_loss}, updates: {i}")
+            test_score = play_test_round(agent, env, i)
+            writer.add_scalar('score/human_clone', test_score, i)
+            agent.save_checkpoint(env_name=env_name)
+        
     #     updates += 1
-    #
-    # print("Completing pre-training. Beginning live training.")
+    
+    print("Completing pre-training. Beginning live training.")
 
     updates = 0
 
@@ -92,10 +131,8 @@ if __name__ == '__main__':
         state = env.reset()
 
         while not done:
-            if warmup > i_episode:
-                action = env.action_space.sample()  # Sample random action
-            else:
-                action = agent.select_action(state)  # Sample action from policy
+            
+            action = agent.select_action(state)  # Sample action from policy
 
             if memory.can_sample(batch_size=batch_size):
                 # Number of updates per step in environment
@@ -125,13 +162,12 @@ if __name__ == '__main__':
 
             state = next_state
 
-        writer.add_scalar('reward/train', episode_reward, i_episode)
+        writer.add_scalar('score/live_train', episode_reward, i_episode)
         print("Episode: {}, total numsteps: {}, episode steps: {}, reward: {}".format(i_episode, total_numsteps,
                                                                                       episode_steps,
                                                                                       round(episode_reward, 2)))
         if i_episode % 10 == 0:
             agent.save_checkpoint(env_name=env_name)
-            memory.save_to_csv()
 
 
 
