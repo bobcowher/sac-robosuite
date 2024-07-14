@@ -26,7 +26,7 @@ if __name__ == '__main__':
     policy = "Gaussian"
     target_update_interval = 1
     automatic_entropy_tuning = False
-    hidden_size = 512
+    hidden_size = 756
     learning_rate = 0.0003
     horizon=500 # max episode steps
 
