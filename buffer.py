@@ -64,3 +64,35 @@ class ReplayBuffer():
             print(f"{self.mem_ctr} memories loaded")
         except:
             print(f"Unable to load memory from ")
+
+
+
+class CombinedReplayBuffer:
+
+    def __init__(self, buffers, percentages):
+        if len(buffers) != len(percentages):
+            raise ValueError("Number of buffers must match number of percentages")
+
+        if not np.isclose(sum(percentages), 1.0):
+            raise ValueError("Percentages must sum to 1")
+
+        self.buffers = buffers
+        self.percentages = percentages
+        
+    def sample_buffer(self, batch_size):
+        sizes = [int(batch_size * perc) for perc in self.percentages]
+        
+        if any(not buf.can_sample(size) for buf, size in zip(self.buffers, sizes)):
+            raise ValueError("One of the buffers cannot currently sample the required batch size")
+        
+        sampled_data = [buf.sample_buffer(size) for buf, size in zip(self.buffers, sizes)]
+        
+        states, actions, rewards, states_, dones = zip(*sampled_data)
+        
+        states = np.concatenate(states, axis=0)
+        actions = np.concatenate(actions, axis=0)
+        rewards = np.concatenate(rewards, axis=0)
+        states_ = np.concatenate(states_, axis=0)
+        dones = np.concatenate(dones, axis=0)
+        
+        return states, actions, rewards, states_, dones
