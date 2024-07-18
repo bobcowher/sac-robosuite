@@ -48,7 +48,7 @@ if __name__ == '__main__':
     episodes = 10000
     warmup = 20
     batch_size = 64
-    pretrain_batch_size = 16
+    pretrain_batch_size = 64
     updates_per_step = 1
     gamma = 0.99
     tau = 0.005
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     # agent.load_checkpoint()
 
     # Tesnorboard
-    episode_identifier = f"Adam - lr: {learning_rate} - Layers: 2 - HL: {hidden_size} - human-clone-policy-only"
+    episode_identifier = f"Adam - lr: {learning_rate} - Layers: 2 - HL: {hidden_size} - human-clone"
 
     writer = SummaryWriter(f'runs/{datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_{episode_identifier}')
 
@@ -105,17 +105,19 @@ if __name__ == '__main__':
     print("Starting pre-training")
     for i in range(100000):
         policy_loss = agent.pretrain_policy(memory, batch_size=pretrain_batch_size)
-        # critic_loss = agent.pretrain_critic(memory, batch_size=pretrain_batch_size)
+        critic_loss = agent.pretrain_critic(memory, batch_size=pretrain_batch_size)
         
         writer.add_scalar('loss/policy_pre_train', policy_loss, i)
-        # writer.add_scalar('loss/critic_pre_train', critic_loss, i)
+        writer.add_scalar('loss/critic_pre_train', critic_loss, i)
+
+        if i % 100 == 0:
+            test_score = play_test_round(agent, env, i)
+            writer.add_scalar('score/human_clone', test_score, i)
 
         if i % 1000 == 0:
             print(f"Iteration: {i}")
             print(f"loss/policy_pre_train: {policy_loss}, updates: {i}")
-            # print(f"loss/critic_pre_train: {critic_loss}, updates: {i}")
-            test_score = play_test_round(agent, env, i)
-            writer.add_scalar('score/human_clone', test_score, i)
+            print(f"loss/critic_pre_train: {critic_loss}, updates: {i}")
             agent.save_checkpoint(env_name=env_name)
         
     #     updates += 1

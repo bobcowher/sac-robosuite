@@ -53,16 +53,14 @@ class SAC(object):
 
     def pretrain_policy(self, memory, batch_size):
         # Sample a batch from memory
-        state_batch, action_batch, reward_batch, next_state_batch, mask_batch = memory.sample_buffer(batch_size=batch_size)
+        state_batch, action_batch, reward_batch, next_state_batch, mask_batch = memory.sample_buffer(batch_size=batch_size, augment_data=True)
 
         state_batch = torch.FloatTensor(state_batch).to(self.device)
         action_batch = torch.FloatTensor(action_batch).to(self.device)
 
         pi, log_pi, _ = self.policy.sample(state_batch)
 
-        # print("pi", pi)
-        # print("action_batch", action_batch)
-
+        # Compute policy loss using MSE with the actions from demonstrations
         policy_loss = F.mse_loss(pi, action_batch)
 
         self.policy_optim.zero_grad()
@@ -73,9 +71,8 @@ class SAC(object):
 
     def pretrain_critic(self, memory, batch_size):
         # Sample a batch from memory
-        state_batch, action_batch, reward_batch, next_state_batch, mask_batch = memory.sample_buffer(batch_size=batch_size)
+        state_batch, action_batch, reward_batch, next_state_batch, mask_batch = memory.sample_buffer(batch_size=batch_size, augment_data=True)
 
-        # Convert to PyTorch tensors and move to the appropriate device
         state_batch = torch.FloatTensor(state_batch).to(self.device)
         action_batch = torch.FloatTensor(action_batch).to(self.device)
         reward_batch = torch.FloatTensor(reward_batch).to(self.device)
